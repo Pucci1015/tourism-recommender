@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}DB ブラウザ | 観光地推薦システム{% endblock %}
+
+{% block content %}
+<div class="dbb-layout">
+
+    <!-- ヘッダー -->
+    <div class="dbb-head">
+        <h1 class="dbb-title">DB ブラウザ</h1>
+        <p class="dbb-lead">都道府県 → エリア → スポット の順に選択してください。</p>
+    </div>
+
+    <!-- 3 カラム -->
+    <div class="dbb-columns">
+
+        <!-- 列 1：都道府県 -->
+        <div class="dbb-col" id="col-pref">
+            <div class="dbb-col-head">都道府県</div>
+            <ul class="dbb-list" id="list-pref">
+                <li class="dbb-placeholder">読み込み中…</li>
+            </ul>
+        </div>
+
+        <!-- 列 2：エリア -->
+        <div class="dbb-col dbb-col--dim" id="col-area">
+            <div class="dbb-col-head">エリア</div>
+            <ul class="dbb-list" id="list-area">
+                <li class="dbb-placeholder">← 都道府県を選択</li>
+            </ul>
+        </div>
+
+        <!-- 列 3：詳細 -->
+        <div class="dbb-col dbb-col--dim dbb-col--detail" id="col-detail">
+            <div class="dbb-col-head">詳細</div>
+            <div id="detail-content" class="dbb-placeholder-center">← エリアを選択</div>
+        </div>
+
+    </div>
+</div>
+
+<template id="tpl-detail">
+    <div class="dbb-detail">
+        <p class="dbb-area-label"></p>
+        <h2 class="dbb-area-name"></h2>
+        <p class="dbb-area-desc"></p>
+
+        <div class="dbb-spots-head">
+            <span class="dbb-spots-count"></span>件のスポット
+        </div>
+        <ul class="dbb-spots"></ul>
+    </div>
+</template>
+
+<template id="tpl-spot">
+    <li class="dbb-spot">
+        <div class="dbb-spot-name"></div>
+        <p class="dbb-spot-desc"></p>
+    </li>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+    const API = {
+        prefectures: '/db/api/prefectures',
+        areas:       pref => `/db/api/areas?pref=${encodeURIComponent(pref)}`,
+        area:        id   => `/db/api/area/${id}`,
+    };
+
+    const listPref   = document.getElementById('list-pref');
+    const listArea   = document.getElementById('list-area');
+    const colArea    = document.getElementById('col-area');
+    const colDetail  = document.getElementById('col-detail');
+    const detailWrap = document.getElementById('detail-content');
+    const tplDetail  = document.getElementById('tpl-detail');
+    const tplSpot    = document.getElementById('tpl-spot');
+
+    function setDim(col, on) {
+        col.classList.toggle('dbb-col--dim', on);
+    }
+
+    function clearActive(list) {
+        list.querySelectorAll('.dbb-item--active')
+            .forEach(el => el.classList.remove('dbb-item--active'));
+    }
+
+    function placeholder(el, text) {
+        el.innerHTML = `<li class="dbb-placeholder">${text}</li>`;
+    }
+
+    fetch(API.prefectures)
+        .then(r => r.json())
+        .then(prefs => {
+            listPref.innerHTML = '';
+            prefs.forEach(pref => {
+                const li = document.createElement('li');
+                li.className = 'dbb-item';
+                li.textContent = pref;
+                li.addEventListener('click', () => onPrefClick(li, pref));
+                listPref.appendChild(li);
+            });
+        });
+
+    function onPrefClick(li, pref) {
+        clearActive(listPref);
+        li.classList.add('dbb-item--active');
+
+        placeholder(listArea, '読み込み中…');
+        setDim(colArea, false);
+
+        detailWrap.innerHTML = '<span class="dbb-placeholder-center">← エリアを選択</span>';
+        setDim(colDetail, true);
+
+        fetch(API.areas(pref))
+            .then(r => r.json())
+            .then(areas => {
+                listArea.innerHTML = '';
+                if (areas.length === 0) {
+                    placeholder(listArea, 'エリアがありません');
+                    return;
+                }
+                areas.forEach(a => {
+                    const li = document.createElement('li');
+                    li.className = 'dbb-item';
+                    li.textContent = a.area;
+                    li.addEventListener('click', () => onAreaClick(li, a.id));
+                    listArea.appendChild(li);
+                });
+            });
+    }
+
+    function onAreaClick(li, areaId) {
+        clearActive(listArea);
+        li.classList.add('dbb-item--active');
+
+        detailWrap.innerHTML = '<span class="dbb-placeholder-center">読み込み中…</span>';
+        setDim(colDetail, false);
+
+        fetch(API.area(areaId))
+            .then(r => r.json())
+            .then(data => {
+                const node = tplDetail.content.cloneNode(true);
+                node.querySelector('.dbb-area-label').textContent =
+                    data.area.prefecture;
+                node.querySelector('.dbb-area-name').textContent =
+                    data.area.area;
+                node.querySelector('.dbb-area-desc').textContent =
+                    data.area.desc || '概要文なし';
+                node.querySelector('.dbb-spots-count').textContent =
+                    data.spots.length;
+
+                const ul = node.querySelector('.dbb-spots');
+                data.spots.forEach(s => {
+                    const sNode = tplSpot.content.cloneNode(true);
+                    sNode.querySelector('.dbb-spot-name').textContent = s.name;
+                    sNode.querySelector('.dbb-spot-desc').textContent =
+                        s.desc || '概要文なし';
+                    ul.appendChild(sNode);
+                });
+
+                detailWrap.innerHTML = '';
+                detailWrap.appendChild(node);
+            });
+    }
+})();
+</script>
+{% endblock %}

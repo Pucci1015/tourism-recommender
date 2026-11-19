@@ -1,0 +1,10 @@
+# Python 3.12 で動作確認
+flask>=3.0
+python-dotenv>=1.0
+numpy>=1.26
+sentence-transformers>=3.0   # model.similarity() を使うため 3.0 以上
+google-genai>=1.0
+
+# データ収集（scraping.py）用
+requests>=2.31
+beautifulsoup4>=4.12

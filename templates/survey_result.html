@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}アンケート集計結果 | 観光地推薦システム{% endblock %}
+
+{% block content %}
+<div class="sr-layout">
+
+    <div class="sr-head">
+        <h1 class="sr-title">アンケート集計結果</h1>
+        {% if data %}
+            <p class="sr-meta">回答数：<strong>{{ data.total }}</strong> 件</p>
+            <a class="btn-outline" href="{{ url_for('survey_result_csv') }}">
+                ↓ CSV ダウンロード
+            </a>
+        {% endif %}
+    </div>
+
+    {% if not data %}
+        <div class="sr-empty">
+            <p>まだ回答がありません。</p>
+            <a class="ghost-link" href="{{ url_for('index') }}">&larr; トップへ</a>
+        </div>
+    {% else %}
+
+    <!-- ================================================
+         Q1・Q2・Q6：択一グラフ（横棒）
+    ================================================ -->
+    <div class="sr-grid-3">
+
+        <!-- Q1 -->
+        <div class="sr-card">
+            <p class="sr-q-label">Q1</p>
+            <h2 class="sr-q-title">コンセプトに合っていたのはどちら？</h2>
+            <div class="sr-chart-wrap">
+                <canvas id="chart-q1"></canvas>
+            </div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="sr-card">
+            <p class="sr-q-label">Q2</p>
+            <h2 class="sr-q-title">順位が納得できたのはどちら？</h2>
+            <div class="sr-chart-wrap">
+                <canvas id="chart-q2"></canvas>
+            </div>
+        </div>
+
+        <!-- Q6 -->
+        <div class="sr-card">
+            <p class="sr-q-label">Q6</p>
+            <h2 class="sr-q-title">実際に使いたい手法はどちら？</h2>
+            <div class="sr-chart-wrap">
+                <canvas id="chart-q6"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================================================
+         Q3・Q4・Q5：5段階リッカート（縦棒 + 平均）
+    ================================================ -->
+    <div class="sr-grid-3">
+
+        <!-- Q3 -->
+        <div class="sr-card">
+            <p class="sr-q-label">Q3</p>
+            <h2 class="sr-q-title">分散表現（SBERT）の満足度</h2>
+            <div class="sr-avg sr-avg--embed">
+                平均 <strong>{{ "%.2f"|format(data.q3.avg) }}</strong> / 5
+            </div>
+            <div class="sr-chart-wrap">
+                <canvas id="chart-q3"></canvas>
+            </div>
+        </div>
+
+        <!-- Q4 -->
+        <div class="sr-card">
+            <p class="sr-q-label">Q4</p>
+            <h2 class="sr-q-title">LLM の満足度</h2>
+            <div class="sr-avg sr-avg--llm">
+                平均 <strong>{{ "%.2f"|format(data.q4.avg) }}</strong> / 5
+            </div>
+            <div class="sr-chart-wrap">
+                <canvas id="chart-q4"></canvas>
+            </div>
+        </div>
+
+        <!-- Q5 -->
+        <div class="sr-card">
+            <p class="sr-q-label">Q5</p>
+            <h2 class="sr-q-title">LLM の推薦理由は参考になったか</h2>
+            <div class="sr-avg sr-avg--llm">
+                平均 <strong>{{ "%.2f"|format(data.q5.avg) }}</strong> / 5
+            </div>
+            <div class="sr-chart-wrap">
+                <canvas id="chart-q5"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================================================
+         Q7：自由記述一覧
+    ================================================ -->
+    {% if data.comments %}
+    <div class="sr-card sr-card--full">
+        <p class="sr-q-label">Q7</p>
+        <h2 class="sr-q-title">自由記述（{{ data.comments|length }} 件）</h2>
+        <ul class="sr-comments">
+            {% for c in data.comments %}
+                <li class="sr-comment">{{ c }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% endif %}{# data #}
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+{% if data %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(() => {
+    const D = {{ data_json | safe }};
+
+    // ---- 共通スタイル ----
+    const EMBED = '#0d7a6e';
+    const LLM   = '#7c4dde';
+    const BLUE  = '#3a5cc9';
+    const SOFT  = '#e7e7e3';
+
+    Chart.defaults.font.family = '"Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif';
+    Chart.defaults.font.size   = 13;
+    Chart.defaults.color       = '#5c5c5c';
+
+    // ---- 横棒グラフ（択一設問）----
+    function hbar(id, labels, values, colors) {
+        new Chart(document.getElementById(id), {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{ data: values, backgroundColor: colors,
+                             borderRadius: 6, borderSkipped: false }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                plugins: { legend: { display: false },
+                           tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x} 件` } } },
+                scales: {
+                    x: { beginAtZero: true, ticks: { stepSize: 1 },
+                         grid: { color: SOFT } },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // ---- 縦棒グラフ（リッカート）----
+    function vbar(id, dist, color) {
+        const total = D.total;
+
+        new Chart(document.getElementById(id), {
+            type: 'bar',
+            data: {
+                labels: ['1', '2', '3', '4', '5'],
+                datasets: [{ data: dist, backgroundColor: color + 'cc',
+                             borderColor: color, borderWidth: 1.5,
+                             borderRadius: 6, borderSkipped: false }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false },
+                           tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} 件` } } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: total,
+                        ticks: { stepSize: Math.ceil(total / 5) },
+                        grid: { color: SOFT }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // ---- 各設問を描画 ----
+
+    // Q1 コンセプトへの適合
+    hbar('chart-q1',
+        ['SBERT', 'LLM', '同程度', 'どちらも×'],
+        [D.q1.embedding, D.q1.llm, D.q1.equal, D.q1.neither],
+        [EMBED, LLM, BLUE, SOFT]);
+
+    // Q2 順位の納得感
+    hbar('chart-q2',
+        ['SBERT', 'LLM', '同程度'],
+        [D.q2.embedding, D.q2.llm, D.q2.equal],
+        [EMBED, LLM, BLUE]);
+
+    // Q6 使いたい手法
+    hbar('chart-q6',
+        ['SBERT', 'LLM', '両方', 'どちらも×'],
+        [D.q6.embedding, D.q6.llm, D.q6.both, D.q6.neither],
+        [EMBED, LLM, BLUE, SOFT]);
+
+    // Q3 SBERT 満足度
+    vbar('chart-q3', D.q3.dist, EMBED);
+
+    // Q4 LLM 満足度
+    vbar('chart-q4', D.q4.dist, LLM);
+
+    // Q5 推薦理由の参考度
+    vbar('chart-q5', D.q5.dist, LLM);
+})();
+</script>
+{% endif %}
+{% endblock %}

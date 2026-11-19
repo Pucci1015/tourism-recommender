@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}観光地を探す | 観光地推薦システム{% endblock %}
+
+{% block content %}
+    <section class="home">
+        <div class="home-head">
+            <h1 class="home-title">どんな観光地を探していますか？</h1>
+            <p class="home-lead">コンセプトを入力すると、SBERTとLLMの2つの手法で観光地を推薦します。</p>
+        </div>
+
+        <form class="prompt-form" action="{{ url_for('result') }}" method="get" data-loading>
+            <div class="prompt-box">
+                <input type="text" name="concept" id="concept" placeholder="例）生き物と触れ合える、絶景が見られる…" autocomplete="off" autofocus required>
+                <button type="submit" class="send-btn" aria-label="検索する">&rarr;</button>
+            </div>
+        </form>
+
+        <a class="ghost-link" href="{{ url_for('categories') }}">コンセプトを一覧から選ぶ &rarr;</a>
+    </section>
+{% endblock %}

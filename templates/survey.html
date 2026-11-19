@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}評価アンケート | 観光地推薦システム{% endblock %}
+
+{% block content %}
+<section class="panel survey">
+    <header class="panel-head">
+        <h1 class="panel-title">推薦結果の評価アンケート</h1>
+        <p class="panel-lead">
+            分散表現（SBERT）と LLM による 2 つの推薦手法について，お答えください。
+        </p>
+        {% if concept %}
+        <p class="survey-concept">評価対象のコンセプト：「{{ concept }}」</p>
+        {% endif %}
+    </header>
+
+    <form action="{{ url_for('survey') }}" method="post" class="survey-form">
+        <input type="hidden" name="concept" value="{{ concept }}">
+
+        <!-- Q1 -->
+        <div class="survey-q">
+            <p class="survey-q-title">
+                Q1. 推薦されたエリアが{% if concept %}「{{ concept }}」{% else %}コンセプト{% endif %}に合っていると感じたのは，どちらの手法ですか？
+            </p>
+            <div class="option-list">
+                <label class="option"><input type="radio" name="q1_relevance" value="embedding" required><span
+                        class="option-label">分散表現（SBERT）</span></label>
+                <label class="option"><input type="radio" name="q1_relevance" value="llm"><span
+                        class="option-label">LLM</span></label>
+                <label class="option"><input type="radio" name="q1_relevance" value="equal"><span
+                        class="option-label">同程度</span></label>
+                <label class="option"><input type="radio" name="q1_relevance" value="neither"><span
+                        class="option-label">どちらも合っていない</span></label>
+            </div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="survey-q">
+            <p class="survey-q-title">
+                Q2. 推薦されたエリアの順位（ランキング）は，どちらの手法が納得できましたか？
+            </p>
+            <div class="option-list">
+                <label class="option"><input type="radio" name="q2_ranking" value="embedding" required><span
+                        class="option-label">分散表現（SBERT）</span></label>
+                <label class="option"><input type="radio" name="q2_ranking" value="llm"><span
+                        class="option-label">LLM</span></label>
+                <label class="option"><input type="radio" name="q2_ranking" value="equal"><span
+                        class="option-label">同程度</span></label>
+            </div>
+        </div>
+
+        <!-- Q3 -->
+        <div class="survey-q">
+            <p class="survey-q-title">
+                Q3. 分散表現（SBERT）による推薦結果に，どの程度満足しましたか？
+            </p>
+            <div class="likert">
+                <span class="likert-end">不満</span>
+                {% for n in range(1, 6) %}
+                <label class="likert-item">
+                    <input type="radio" name="q3_sbert" value="{{ n }}" {% if n==1 %}required{% endif %}>
+                    <span class="likert-num">{{ n }}</span>
+                </label>
+                {% endfor %}
+                <span class="likert-end">満足</span>
+            </div>
+        </div>
+
+        <!-- Q4 -->
+        <div class="survey-q">
+            <p class="survey-q-title">
+                Q4. LLM による推薦結果に，どの程度満足しましたか？
+            </p>
+            <div class="likert">
+                <span class="likert-end">不満</span>
+                {% for n in range(1, 6) %}
+                <label class="likert-item">
+                    <input type="radio" name="q4_llm" value="{{ n }}" {% if n==1 %}required{% endif %}>
+                    <span class="likert-num">{{ n }}</span>
+                </label>
+                {% endfor %}
+                <span class="likert-end">満足</span>
+            </div>
+        </div>
+
+        <!-- Q5 -->
+        <div class="survey-q">
+            <p class="survey-q-title">
+                Q5. LLM が提示した「推薦理由」は，参考になりましたか？
+            </p>
+            <div class="likert">
+                <span class="likert-end">全く</span>
+                {% for n in range(1, 6) %}
+                <label class="likert-item">
+                    <input type="radio" name="q5_reason" value="{{ n }}" {% if n==1 %}required{% endif %}>
+                    <span class="likert-num">{{ n }}</span>
+                </label>
+                {% endfor %}
+                <span class="likert-end">とても</span>
+            </div>
+        </div>
+
+        <!-- Q6 -->
+        <div class="survey-q">
+            <p class="survey-q-title">
+                Q6. 実際に観光地を選ぶなら，どちらの手法を使いたいですか？
+            </p>
+            <div class="option-list">
+                <label class="option"><input type="radio" name="q6_prefer" value="embedding" required><span
+                        class="option-label">分散表現（SBERT）</span></label>
+                <label class="option"><input type="radio" name="q6_prefer" value="llm"><span
+                        class="option-label">LLM</span></label>
+                <label class="option"><input type="radio" name="q6_prefer" value="both"><span
+                        class="option-label">両方使いたい</span></label>
+                <label class="option"><input type="radio" name="q6_prefer" value="neither"><span
+                        class="option-label">どちらも使わない</span></label>
+            </div>
+        </div>
+
+        <!-- Q7 -->
+        <div class="survey-q">
+            <p class="survey-q-title">
+                Q7. 気づいた点や改善してほしい点があれば，ご自由にお書きください。（任意）
+            </p>
+            <textarea class="survey-textarea" name="q7_comment" rows="4"
+                placeholder="例）LLMの理由は分かりやすいが、順位は分散表現の方が納得できた など"></textarea>
+        </div>
+
+        <div class="panel-actions survey-actions">
+            <a class="ghost-link" href="{{ url_for('index') }}">&larr; トップへ</a>
+            <button type="submit" class="btn-primary">回答を送信</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}カテゴリを選ぶ | 観光地推薦システム{% endblock %}
+
+{% block content %}
+    <section class="panel">
+        <header class="panel-head">
+            <h1 class="panel-title">カテゴリを選ぶ</h1>
+            <p class="panel-lead">気になるカテゴリを1つ選んでください。</p>
+        </header>
+
+        <form action="{{ url_for('concepts') }}" method="get" data-radio-guard>
+            <div class="option-grid">
+                {% for category in categories %}
+                    <label class="option">
+                        <input type="radio" name="category_id" value="{{ category.id }}">
+                        <span class="option-label">{{ category.name }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+
+            <div class="panel-actions">
+                <a class="ghost-link" href="{{ url_for('index') }}">&larr; 戻る</a>
+                <button type="submit" class="btn-primary" data-guard-btn disabled>決定</button>
+            </div>
+        </form>
+    </section>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/radio-guard.js') }}"></script>
+{% endblock %}

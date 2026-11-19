@@ -1,0 +1,22 @@
+# 環境変数（APIキー）
+.env
+
+# データベース（スクレイピングデータ・アンケート回答を含むため公開しない）
+*.sqlite
+*.sqlite3
+*.db
+survey_responses.csv
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+
+# エディタ / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

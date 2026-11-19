@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}「{{ concept }}」の検索結果 | 観光地推薦システム{% endblock %}
+
+{% block content %}
+    <section class="result">
+        <header class="result-head">
+            <p class="result-eyebrow">検索結果</p>
+            <h1 class="result-concept">「{{ concept }}」</h1>
+        </header>
+
+        <div class="compare">
+            <!-- 手法1：分散表現 -->
+            <div class="method method--embed">
+                <div class="method-head">
+                    <span class="method-tag">手法 1</span>
+                    <h2 class="method-name">分散表現</h2>
+                    <p class="method-desc">概要文の類似度でランキング</p>
+                </div>
+
+                {% for result in embedding %}
+                    <article class="rank-card">
+                        <div class="rank-top">
+                            <span class="rank-no">{{ loop.index }}</span>
+                            <h3 class="area-name">{{ result.prefecture }} - {{ result.area }}</h3>
+                        </div>
+                        <p class="area-desc">{{ result.desc }}</p>
+                        <p class="area-score">
+                            <span class="score-label">類似度</span>
+                            <span class="score-value">{{ "%.1f"|format(result.similarity * 100) }} %</span>
+                        </p>
+                        <ul class="spot-list">
+                            {% for spot in result.top_spots(3) %}
+                                <li class="spot">{{ spot.name }}</li>
+                            {% endfor %}
+                        </ul>
+                    </article>
+                {% else %}
+                    <p class="empty">該当する結果がありませんでした。</p>
+                {% endfor %}
+            </div>
+
+            <!-- 手法2：LLM -->
+            <div class="method method--llm">
+                <div class="method-head">
+                    <span class="method-tag">手法 2</span>
+                    <h2 class="method-name">LLM</h2>
+                    <p class="method-desc">コンセプトに合う理由とともに提示</p>
+                </div>
+
+                {% for result in llm %}
+                    <article class="rank-card">
+                        <div class="rank-top">
+                            <span class="rank-no">{{ loop.index }}</span>
+                            <h3 class="area-name">{{ result.prefecture }} - {{ result.area }}</h3>
+                        </div>
+                        <p class="area-desc">{{ result.desc }}</p>
+                        <p class="area-reason">
+                            <span class="score-label">理由&nbsp;</span>{{ result.reason }}
+                        </p>
+                        <ul class="spot-list">
+                            {% for spot in result.spots %}
+                                <li class="spot">{{ spot }}</li>
+                            {% endfor %}
+                        </ul>
+                    </article>
+                {% else %}
+                    <p class="empty">該当する結果がありませんでした。</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="result-survey-cta">
+            <p class="result-survey-text">2つの手法を比べてみて，いかがでしたか？</p>
+            <a class="btn-primary" href="{{ url_for('survey', concept=concept) }}", target="_blank">この結果を評価する</a>
+            <a class="ghost-link" href="{{ url_for('index') }}">&larr; 別のコンセプトで検索</a>
+        </div>
+    </section>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}回答ありがとうございました | 観光地推薦システム{% endblock %}
+
+{% block content %}
+<section class="survey-done">
+    <div class="survey-done-check">&check;</div>
+    <h1 class="survey-done-title">ご回答ありがとうございました</h1>
+    <p class="survey-done-message">
+        いただいた評価は，分散表現と LLM の比較研究に活用させていただきます。
+    </p>
+    <a class="btn-primary" href="{{ url_for('index') }}">トップページへ戻る</a>
+</section>
+{% endblock %}
